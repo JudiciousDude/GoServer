@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 
 	"../dbObjects"
 )
@@ -51,4 +52,18 @@ func (handler Handler) HandleGetList(writer http.ResponseWriter, req *http.Reque
 	writer.WriteHeader(http.StatusOK)
 	writer.Header().Set("Content-Type", "application/json")
 	writer.Write(jsoned)
+}
+
+func (handler Handler) HandleDelete(writer http.ResponseWriter, req *http.Request) {
+	fmt.Println(req.URL.Path)
+
+	//IF SETTINGS FROM FILE - FIX TABLE NAME HERE
+	result, err := handler.DB.Exec("DELETE FROM Stock WHERE id=" + strings.TrimPrefix(req.URL.Path, "/delete/"))
+	if err != nil {
+		writer.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	affected, _ := result.RowsAffected()
+	log.Println("rows affected", affected)
+	writer.WriteHeader(http.StatusOK)
 }

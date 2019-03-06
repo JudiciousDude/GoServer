@@ -17,9 +17,10 @@ var (
 	handler handlers.Handler
 )
 
+//Connects to database
 func dbConnect(status chan<- bool) {
 	var err error
-	db, err = sql.Open("mysql", "root:root@tcp(localhost:3302)/test?charset=utf8")
+	db, err = sql.Open("mysql", "root:root@tcp(localhost:3302)/test?charset=utf8") //get db settings from json or xml...
 	if err != nil {
 		fmt.Println(err)
 		status <- false
@@ -66,6 +67,7 @@ func main() {
 	http.HandleFunc("/", handler.HandleIndex)
 
 	http.HandleFunc("/getlist", handler.HandleGetList)
+	http.HandleFunc("/delete/", handler.HandleDelete)
 
 	http.ListenAndServe(port, nil)
 

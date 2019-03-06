@@ -9,7 +9,7 @@ import (
 type Resourse struct {
 	Id         int    `json:"id"`
 	Name       string `json:"name"`
-	Quantity   int    `json:"quantity"`
+	Quantity   int64  `json:"quantity"`
 	Conditions string `json:"conditions"`
 }
 
@@ -23,10 +23,25 @@ func (r Resourse) LoadListFromDB(db *sql.DB) ([]Resourse, error) {
 
 	for rows.Next() {
 		resourse := Resourse{}
-		err = rows.Scan(&resourse.Id, &resourse.Name, &resourse.Quantity, &resourse.Conditions)
+
+		quant := sql.NullInt64{}
+		conditions := sql.NullString{}
+
+		err = rows.Scan(&resourse.Id, &resourse.Name, &quant, &conditions)
 		if err != nil {
 			return nil, err
 		}
+
+		if quant.Valid {
+			resourse.Quantity = quant.Int64
+		}
+
+		if conditions.Valid {
+			resourse.Conditions = conditions.String
+		} else {
+			resourse.Conditions = "unknown"
+		}
+
 		resourses = append(resourses, resourse)
 	}
 
