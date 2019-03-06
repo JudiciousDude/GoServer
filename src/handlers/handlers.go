@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"../dbObjects"
@@ -17,22 +19,64 @@ type Handler struct {
 	DB  *sql.DB
 }
 
-func (handler Handler) HandleIndex(writer http.ResponseWriter, req *http.Request) {
-	fmt.Println(req.URL.Path)
+var (
+	strictChecker *regexp.Regexp
+	textChecker   *regexp.Regexp
+)
 
-	file, err := ioutil.ReadFile("index.html")
-	if err != nil {
-		log.Println(err)
-		writer.WriteHeader(http.StatusInternalServerError)
-		return
+func init() {
+	strictChecker = regexp.MustCompile("[\\W]")
+	textChecker = regexp.MustCompile("['|\"](\\s*)$")
+}
+
+func (handler Handler) HandleIndex(writer http.ResponseWriter, req *http.Request) {
+	switch req.Method {
+	case http.MethodGet:
+		file, err := ioutil.ReadFile("index.html")
+		if err != nil {
+			log.Println(err)
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		writer.WriteHeader(200)
+		writer.Write(file)
+
+	case http.MethodPost:
+		body := json.NewDecoder(req.Body)
+		res := dbObjects.Resourse{}
+
+		err := body.Decode(&res)
+		if err != nil {
+			writer.WriteHeader(http.StatusBadRequest)
+			log.Println("HandleIndex:", err.Error())
+			return
+		}
+
+		if strictChecker.MatchString(res.Name) {
+			writer.WriteHeader(http.StatusForbidden)
+			return
+		}
+
+		if strings.ContainsRune(res.Conditions, ';') || textChecker.MatchString(res.Conditions) {
+			writer.WriteHeader(http.StatusForbidden)
+			return
+		}
+
+		err = res.AddToDb(handler.DB)
+		if err != nil {
+			fmt.Println(err)
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		writer.WriteHeader(200)
 	}
 
-	writer.WriteHeader(200)
-	writer.Write(file)
+	log.Println("HandleIndex caught:", req.URL.Path, "with method", req.Method)
 }
 
 func (handler Handler) HandleGetList(writer http.ResponseWriter, req *http.Request) {
-	fmt.Println(req.URL.Path)
 	tmp := dbObjects.Resourse{}
 
 	res, err := tmp.LoadListFromDB(handler.DB)
@@ -52,18 +96,24 @@ func (handler Handler) HandleGetList(writer http.ResponseWriter, req *http.Reque
 	writer.WriteHeader(http.StatusOK)
 	writer.Header().Set("Content-Type", "application/json")
 	writer.Write(jsoned)
+
+	log.Println("HandleGetList caught:", req.URL.Path, "with method", req.Method)
 }
 
 func (handler Handler) HandleDelete(writer http.ResponseWriter, req *http.Request) {
-	fmt.Println(req.URL.Path)
+	number := strings.TrimPrefix(req.URL.Path, "/delete/")
 
-	//IF SETTINGS FROM FILE - FIX TABLE NAME HERE
-	result, err := handler.DB.Exec("DELETE FROM Stock WHERE id=" + strings.TrimPrefix(req.URL.Path, "/delete/"))
+	if _, ok := strconv.Atoi(number); ok != nil {
+		writer.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	_, err := handler.DB.Exec("DELETE FROM Stock WHERE id=?", number)
 	if err != nil {
 		writer.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
-	affected, _ := result.RowsAffected()
-	log.Println("rows affected", affected)
 	writer.WriteHeader(http.StatusOK)
+
+	log.Println("HandleDelete caught:", req.URL.Path, "with method", req.Method)
 }

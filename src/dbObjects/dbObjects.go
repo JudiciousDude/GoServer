@@ -9,8 +9,18 @@ import (
 type Resourse struct {
 	Id         int    `json:"id"`
 	Name       string `json:"name"`
-	Quantity   int64  `json:"quantity"`
-	Conditions string `json:"conditions"`
+	Quantity   int64  `json:"quantity,string"`
+	Conditions string `json:"conditions,omitempty"`
+}
+
+func (r Resourse) AddToDb(db *sql.DB) error {
+	_, err := db.Exec("INSERT INTO Stock(resourse, quantity, store_conditions) VALUES (?,?,?)",
+		r.Name, r.Quantity, r.Conditions)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r Resourse) LoadListFromDB(db *sql.DB) ([]Resourse, error) {
