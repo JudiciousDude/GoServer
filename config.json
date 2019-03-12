@@ -1,0 +1,9 @@
+{
+    "user":"root",
+    "password":"",
+    "conntype":"tcp",
+    "dbpath":"localhost",
+    "dbport":"3306",
+    "dbname":"test",
+    "serverport":"8081"
+}

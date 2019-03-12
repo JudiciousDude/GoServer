@@ -1,8 +1,0 @@
-.content{
-	display: flex;
-	justify-content: center;
-}
-.table{
-	flex-direction: column;
-	align-items: center;
-}

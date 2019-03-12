@@ -14,8 +14,8 @@ type Resourse struct {
 }
 
 func (r Resourse) AddToDb(db *sql.DB) error {
-	_, err := db.Exec("INSERT INTO Stock(resourse, quantity, store_conditions) VALUES (?,?,?)",
-		r.Name, r.Quantity, r.Conditions)
+	_, err := db.Exec("INSERT INTO Stock(resourse, store_conditions, quantity) VALUES (?,?,?)",
+		r.Name, r.Conditions, r.Quantity)
 	if err != nil {
 		return err
 	}

@@ -7,7 +7,7 @@ function getList() {
                 ${json.map((item, index) => {
                     if(item.conditions == undefined){item.conditions = "UNKNOWN"};
                     return `
-                    <tr data-id="${item.id}" class="data-row">
+                    <tr data-id="${item.id}" class="data-row" data-index="${index}">
                     <th scope="row">${index}</th>
                     <td>${item.name}</td>
                     <td>${item.quantity}</td>
@@ -20,7 +20,7 @@ function getList() {
         .then(x => {
                 document.querySelectorAll('.data-row').forEach(element => {
                 element.addEventListener('click', (event) => {
-                    if(confirm("Delete row " + `${element.dataset.id}` + "?"))
+                    if(confirm("Delete row " + `${element.dataset.index}` + "?"))
                         deleteEl(element);
                 });
             });     
@@ -68,6 +68,4 @@ function addRow(){
     document.getElementById("res-name").value = "";
     document.getElementById("res-quant").value = "";
     document.getElementById("res-cond").value = "";
-
-    setClicks();
 }
